@@ -18,14 +18,26 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(csrf -> csrf.disable()) // Desactivar CSRF para APIs
+        http
+                // DESACTIVAR CSRF
+                .csrf(csrf -> csrf.disable())
+
+                //  CONFIGURAR RUTAS PÚBLICAS Y PRIVADAS
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // Login y Registro libres
-                        .anyRequest().authenticated() // Todo lo demás (Citas, etc.) protegido
+                        // Login y Register son públicos
+                        .requestMatchers("/auth/**").permitAll()
+                        //acceso de swagger publico
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // Todo lo demás requiere Token
+                        .anyRequest().authenticated()
                 )
+
+                //  NO GUARDAR SESIONES (Stateless)
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
+
+                //  AÑADIR TU FILTRO JWT
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 }

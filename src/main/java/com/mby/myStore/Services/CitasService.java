@@ -35,6 +35,11 @@ public class CitasService {
     @Autowired
     private EmpleadoRepository empleadoRepository;
 
+    /**
+     * Registra una nueva cita calculando automáticamente la duración y validando disponibilidad.
+     * @param cita Objeto con los datos de la reserva (Fecha, Hora Inicio, IDs de relaciones).
+     * @throws SlotAlreadyOccupiedException Si el horario ya está comprometido para ese empleado.
+     */
     public void addCita(Cita cita) throws SlotAlreadyOccupiedException {
         //establecemos la hora de final dependiendo del servicio
         Servicio servicio = servicioRepository.getServiciosById(cita.getServicio().getId());
@@ -48,6 +53,9 @@ public class CitasService {
         }
     }
 
+    /**
+     * Elimina una cita existente tras verificar su presencia en la base de datos.
+     */
     public void deleteCita(Cita cita) {
         if (citaRepository.existsById(cita.getId())) {
             citaRepository.delete(cita);
@@ -56,18 +64,23 @@ public class CitasService {
         }
     }
 
+    /**
+     * Actualiza una cita permitiendo cambiar fecha, hora, empleado o servicio.
+     * @param id Identificador de la cita original.
+     * @param citaEditada Objeto con los nuevos valores.
+     */
     @Transactional
     public void updateCita(int id, Cita citaEditada) throws SlotAlreadyOccupiedException {
-        // 1. Verificamos que la cita existe
+        // Verificamos que la cita existe
         Cita citaExistente = citaRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException("No se encontró la cita con ID: " + id));
 
-        // 2. recuperamos el servicio para recalcular la hora fin (por si ha cambiado el tipo de corte)
+        // recuperamos el servicio para recalcular la hora fin (por si ha cambiado el tipo de corte)
         Servicio servicio = servicioRepository.findById(citaEditada.getServicio().getId()).get();
 
         LocalTime nuevaHoraFin = citaEditada.getHoraInicio().plusMinutes(servicio.getDuracionMinutos());
 
-        // 3. VALIDACIÓN DE SOLAPAMIENTOS
+        //  VALIDACIÓN DE SOLAPAMIENTOS
         // Buscamos conflictos para el nuevo horario/empleado
         List<Cita> conflictos = citaRepository.comprobarDispo(
                 citaEditada.getEmpleado(),
@@ -76,7 +89,7 @@ public class CitasService {
                 citaEditada.getFecha()
         );
 
-        // 4. FILTRARSE A SÍ MISMO
+        // FILTRARSE A SÍ MISMO
         // Si hay conflictos, debemos comprobar que no sean la propia cita que estamos editando
         boolean hayChoqueReal = conflictos.stream()
                 .anyMatch(c -> c.getId() != id);
@@ -85,7 +98,7 @@ public class CitasService {
             throw new SlotAlreadyOccupiedException("El nuevo horario se solapa con otra cita existente.");
         }
 
-        // 5. Actualizamos los datos
+        // Actualizamos los datos
         citaExistente.setFecha(citaEditada.getFecha());
         citaExistente.setHoraInicio(citaEditada.getHoraInicio());
         citaExistente.setHoraFin(nuevaHoraFin);
@@ -94,6 +107,7 @@ public class CitasService {
 
         citaRepository.save(citaExistente);
     }
+
 
     public List<Cita> getCitasByFecha(LocalDate fecha) {
         return citaRepository.getCitasByFecha(fecha);
@@ -108,8 +122,12 @@ public class CitasService {
         }
     }
 
+    /**
+     * Algoritmo principal para mostrar la agenda disponible en la App Android.
+     * Genera tramos horarios y los filtra comparándolos con las citas reales del día.
+     */
     public List<LocalTime> obtenerHorasLibres(int empleadoId, LocalDate fecha) {
-        // 1. Definimos los tramos que queremos mostrar en la App
+        // Definimos los tramos que queremos mostrar en la App
         List<LocalTime> todosLosTramos = List.of(
                 LocalTime.of(16, 0), LocalTime.of(16, 30),
                 LocalTime.of(17, 0), LocalTime.of(17, 30),
@@ -119,7 +137,7 @@ public class CitasService {
 
         );
 
-        // 2. UNA SOLA CONSULTA: Traemos todas las citas de ese día para ese barbero
+        //  UNA SOLA CONSULTA: Traemos todas las citas de ese día para ese barbero
         List<Cita> citasDelDia = citaRepository.findByEmpleadoIdAndFecha(empleadoId, fecha);
 
         return todosLosTramos.stream()
@@ -127,6 +145,10 @@ public class CitasService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Función auxiliar que determina si un punto específico en el tiempo (tramo)
+     * cae dentro del intervalo [Inicio, Fin) de alguna cita ocupada.
+     */
     private boolean estaLibre(LocalTime tramo, List<Cita> citas) {
         for (Cita cita : citas) {
             // Si el tramo cae dentro de una cita, no está libre
@@ -135,5 +157,16 @@ public class CitasService {
             }
         }
         return true; // Si recorre todas y no choca, está libre
+    }
+
+
+    /**
+     * Lógica de negocio para buscar citas por el nombre de un cliente.
+     * @param nombre Cadena de texto a buscar (nombre del cliente).
+     * @return Lista de citas que coinciden con el criterio.
+     */
+    public List<Cita> buscarCitasPorNombreCliente(String nombre) {
+        // Llamamos al método con la @Query personalizada que creamos en el Repository
+        return citaRepository.findByNombreClientePersonalizado(nombre);
     }
 }

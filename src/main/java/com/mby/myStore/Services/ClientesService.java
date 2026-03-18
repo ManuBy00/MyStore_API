@@ -96,6 +96,15 @@ public class ClientesService {
 
     }
 
+
+    /**
+     * Realiza la validación de acceso al sistema (Login).
+     * Compara las credenciales introducidas con los datos almacenados en la base de datos.
+     * * @param email Correo electrónico del usuario.
+     * @param password Contraseña en texto plano introducida en el formulario.
+     * @return El objeto Cliente si la autenticación es exitosa.
+     * @throws InvalidCredentialsException Si el usuario no existe o la contraseña no coincide.
+     */
     public Cliente login(String email, String password) throws InvalidCredentialsException {
         Cliente cliente = getClienteByEmail(email);
         if (cliente == null){
@@ -109,6 +118,11 @@ public class ClientesService {
         }
     }
 
+    /**
+     * Realiza una búsqueda flexible de clientes por su nombre.
+     * @param nombre Cadena de texto a buscar.
+     * @return Lista de clientes que contienen la cadena, sin distinguir mayúsculas de minúsculas.
+     */
     public List<Cliente> getClientesByNombre(String nombre) {
         return clienteRepository.findByNombreContainingIgnoreCase(nombre);
     }

@@ -107,22 +107,4 @@ public class ClientesController {
     public ResponseEntity<List<Cliente>> searchClientes(@RequestParam String nombre) {
         return ResponseEntity.ok(clienteServices.getClientesByNombre(nombre));
     }
-
-    /**
-     * Gestiona la autenticación de usuarios en el sistema.
-     * Recibe las credenciales de forma segura a través del cuerpo de la petición.
-     * * @param loginData Objeto DTO que contiene el email y la contraseña del cliente.
-     * @return ResponseEntity con los datos del cliente si el login es correcto (200 OK),
-     * 401 Unauthorized si las credenciales fallan, o 404 si el usuario no existe.
-     */
-    @CrossOrigin
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginData loginData) {
-        try {
-           Cliente cliente = clienteServices.login(loginData.getEmail(), loginData.getPassword());
-            return ResponseEntity.ok(cliente);
-        }catch (InvalidCredentialsException e){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect credentials");
-        }
-    }
 }

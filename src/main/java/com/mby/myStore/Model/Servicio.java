@@ -1,5 +1,6 @@
 package com.mby.myStore.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -35,6 +36,7 @@ public class Servicio {
 
     @OneToMany
     @JoinColumn(name = "servicio_id")
+    @JsonIgnore
     private Set<Cita> citas = new LinkedHashSet<>();
 
 }

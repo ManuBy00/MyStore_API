@@ -19,6 +19,7 @@ import java.util.List;
 @CrossOrigin // Permite peticiones desde la App Android
 public class CitasController {
 
+
     @Autowired
     private CitasService citasService;
 
@@ -85,5 +86,15 @@ public class CitasController {
 
         List<LocalTime> horasLibres = citasService.obtenerHorasLibres(empleadoId, fecha);
         return ResponseEntity.ok(horasLibres);
+    }
+
+    /**
+     * Busca citas filtrando por el nombre del cliente (parcial o completo).
+     * Demuestra el uso de JPQL con JOIN manual entre Cita y Cliente.
+     */
+    @GetMapping("/buscar/cliente")
+    public ResponseEntity<List<Cita>> buscarPorNombre(@RequestParam String nombre) {
+        List<Cita> citas = citasService.buscarCitasPorNombreCliente(nombre);
+        return ResponseEntity.ok(citas);
     }
 }
