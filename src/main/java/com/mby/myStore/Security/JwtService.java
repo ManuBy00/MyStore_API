@@ -11,17 +11,25 @@ import java.util.Date;
 public class JwtService {
     private final String SECRET_KEY = "clave_super_secreta_y_larga_para_la_barberia";
 
-    // Generar el token cuando el usuario hace login
-    public String generateToken(String username) {
+    /**
+     * Crea un nuevo Token JWT firmado para un usuario autenticado.
+     * @param email Identificador del usuario (habitualmente el email).
+     * @return String con el token generado en formato Base64.
+     */
+    public String generateToken(String email) {
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hora
                 .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // Extraer el usuario del token para saber quién es
+    /**
+     * Proceso inverso: decodifica el token y extrae el nombre del usuario.
+     * @param token Cadena JWT recibida en la cabecera HTTP.
+     * @return El nombre de usuario (subject) si el token es válido.
+     */
     public String extractUsername(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()))
