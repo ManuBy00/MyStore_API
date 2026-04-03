@@ -1,9 +1,12 @@
 package com.mby.myStore.Services;
 
 
+import com.mby.myStore.DTO.CitaDTO;
 import com.mby.myStore.Exceptions.RecordNotFoundException;
 import com.mby.myStore.Exceptions.SlotAlreadyOccupiedException;
 import com.mby.myStore.Model.Cita;
+import com.mby.myStore.Model.Cliente;
+import com.mby.myStore.Model.Empleado;
 import com.mby.myStore.Model.Servicio;
 import com.mby.myStore.Repositories.CitaRepository;
 import com.mby.myStore.Repositories.ClienteRepository;
@@ -13,9 +16,9 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,30 +40,51 @@ public class CitasService {
 
     /**
      * Registra una nueva cita calculando automáticamente la duración y validando disponibilidad.
-     * @param cita Objeto con los datos de la reserva (Fecha, Hora Inicio, IDs de relaciones).
+     * @param dto Objeto con los datos de la reserva (Fecha, Hora Inicio, IDs de relaciones).
      * @throws SlotAlreadyOccupiedException Si el horario ya está comprometido para ese empleado.
      */
-    public void addCita(Cita cita) throws SlotAlreadyOccupiedException {
-        //establecemos la hora de final dependiendo del servicio
-        Servicio servicio = servicioRepository.getServiciosById(cita.getServicio().getId());
-        LocalTime horaFin = cita.getHoraInicio().plusMinutes(servicio.getDuracionMinutos());
-        cita.setHoraFin(horaFin);
+    public CitaDTO createCita(CitaDTO dto) throws SlotAlreadyOccupiedException {
+        // 1. Carga de dependencias con mensajes de error claros
+        Cliente cliente = clienteRepository.findById(dto.getClienteId())
+                .orElseThrow(() -> new RecordNotFoundException("Cliente ID " + dto.getClienteId() + " no encontrado"));
+        Empleado empleado = empleadoRepository.findById(dto.getEmpleadoId())
+                .orElseThrow(() -> new RecordNotFoundException("Empleado ID " + dto.getEmpleadoId() + " no encontrado"));
+        Servicio servicio = servicioRepository.findById(dto.getServicioId())
+                .orElseThrow(() -> new RecordNotFoundException("Servicio ID " + dto.getServicioId() + " no encontrado"));
 
-        if (citaRepository.comprobarDispo(cita.getEmpleado(), cita.getHoraInicio(), cita.getHoraFin(), cita.getFecha()).isEmpty()) {
-            citaRepository.save(cita);
-        }else {
-            throw new SlotAlreadyOccupiedException("El empleado ya tiene una cita reservada que se solapa con este horario.");
+        // 2. Construcción del objeto (Mapeo)
+        Cita cita = new Cita();
+        cita.setFecha(dto.getFecha());
+        cita.setHoraInicio(dto.getHoraInicio());
+        cita.setCliente(cliente);
+        cita.setEmpleado(empleado);
+        cita.setServicio(servicio);
+
+        // Valores automáticos
+        cita.setCreatedAt(Instant.now());
+        cita.setEstado("Confirmada");
+
+        // Cálculo de fin basado en la duración del servicio recuperado
+        cita.setHoraFin(dto.getHoraInicio().plusMinutes(servicio.getDuracionMinutos()));
+
+        // 3. Validación de Negocio: Se hace justo antes de guardar
+        if (!checkDispo(cita)) {
+            throw new SlotAlreadyOccupiedException("El horario solicitado (" +
+                    cita.getHoraInicio() + " - " + cita.getHoraFin() + ") ya está ocupado para " + empleado.getNombre());
         }
+
+        citaRepository.save(cita);
+        return entityToDTO(cita);
     }
 
     /**
      * Elimina una cita existente tras verificar su presencia en la base de datos.
      */
-    public void deleteCita(Cita cita) {
-        if (citaRepository.existsById(cita.getId())) {
-            citaRepository.delete(cita);
+    public void deleteCita(int id) {
+        if (citaRepository.existsById(id)){
+            citaRepository.deleteById(id);
         }else {
-            throw new RecordNotFoundException("El empleado no existe");
+            throw new RecordNotFoundException("La cita no existe");
         }
     }
 
@@ -70,20 +94,25 @@ public class CitasService {
      * @param citaEditada Objeto con los nuevos valores.
      */
     @Transactional
-    public void updateCita(int id, Cita citaEditada) throws SlotAlreadyOccupiedException {
+    public Cita updateCita(int id, CitaDTO citaEditada) throws SlotAlreadyOccupiedException {
         // Verificamos que la cita existe
         Cita citaExistente = citaRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException("No se encontró la cita con ID: " + id));
 
         // recuperamos el servicio para recalcular la hora fin (por si ha cambiado el tipo de corte)
-        Servicio servicio = servicioRepository.findById(citaEditada.getServicio().getId()).get();
+        Servicio servicio = servicioRepository.findById(citaEditada.getServicioId())
+                .orElseThrow(() -> new RecordNotFoundException("El servicio con ID " + citaEditada.getServicioId() + " no existe"));
+
+
+        Empleado empleado = empleadoRepository.findById(citaEditada.getEmpleadoId())
+                .orElseThrow(() -> new RecordNotFoundException("El empleado con ID " + citaEditada.getEmpleadoId() + " no existe"));
 
         LocalTime nuevaHoraFin = citaEditada.getHoraInicio().plusMinutes(servicio.getDuracionMinutos());
 
-        //  VALIDACIÓN DE SOLAPAMIENTOS
+        //  VALIDACIÓN DE SOLAPAMIENTOS POR SI SE CAMBIA LA HORA O DÍA
         // Buscamos conflictos para el nuevo horario/empleado
         List<Cita> conflictos = citaRepository.comprobarDispo(
-                citaEditada.getEmpleado(),
+                empleado,
                 citaEditada.getHoraInicio(),
                 nuevaHoraFin,
                 citaEditada.getFecha()
@@ -102,15 +131,16 @@ public class CitasService {
         citaExistente.setFecha(citaEditada.getFecha());
         citaExistente.setHoraInicio(citaEditada.getHoraInicio());
         citaExistente.setHoraFin(nuevaHoraFin);
-        citaExistente.setEmpleado(citaEditada.getEmpleado());
+        citaExistente.setEmpleado(empleado);
         citaExistente.setServicio(servicio);
 
         citaRepository.save(citaExistente);
+        return citaExistente;
     }
 
 
-    public List<Cita> getCitasByFecha(LocalDate fecha) {
-        return citaRepository.getCitasByFecha(fecha);
+    public List<CitaDTO> getCitasByFecha(LocalDate fecha) {
+        return citaRepository.getCitasByFecha(fecha).stream().map(this::entityToDTO).toList();
     }
 
 
@@ -159,14 +189,32 @@ public class CitasService {
         return true; // Si recorre todas y no choca, está libre
     }
 
-
     /**
      * Lógica de negocio para buscar citas por el nombre de un cliente.
      * @param nombre Cadena de texto a buscar (nombre del cliente).
      * @return Lista de citas que coinciden con el criterio.
      */
-    public List<Cita> buscarCitasPorNombreCliente(String nombre) {
+    public List<CitaDTO> buscarCitasPorNombreCliente(String nombre) {
         // Llamamos al método con la @Query personalizada que creamos en el Repository
-        return citaRepository.findByNombreClientePersonalizado(nombre);
+        return citaRepository.findByNombreClientePersonalizado(nombre).stream().map(this::entityToDTO).toList();
+    }
+
+    /**
+     * Convierte una entidad Cita en un objeto CitaDTO.
+     * Extrae solo los IDs de las relaciones para simplificar la respuesta.
+     */
+    public CitaDTO entityToDTO(Cita cita) {
+        CitaDTO dto = new CitaDTO();
+
+        // Copiamos los datos básicos
+        dto.setFecha(cita.getFecha());
+        dto.setHoraInicio(cita.getHoraInicio());
+
+        // Extraemos los IDs de los objetos relacionados
+        dto.setClienteId(cita.getCliente().getId());
+        dto.setEmpleadoId(cita.getEmpleado().getId());
+        dto.setServicioId(cita.getServicio().getId());
+
+        return dto;
     }
 }

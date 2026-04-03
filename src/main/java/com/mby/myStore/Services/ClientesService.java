@@ -1,5 +1,6 @@
 package com.mby.myStore.Services;
 
+import com.mby.myStore.DTO.ClienteDTO;
 import com.mby.myStore.Exceptions.DuplicateRecordException;
 import com.mby.myStore.Exceptions.InvalidCredentialsException;
 import com.mby.myStore.Exceptions.RecordNotFoundException;
@@ -24,10 +25,10 @@ public class ClientesService {
     /**
      * Devuelve una lista de todos los clientes
      */
-    public List<Cliente> getAll(){
-        List<Cliente> clientes = clienteRepository.findAll();
-        if (clientes.isEmpty()){
-            return new ArrayList<Cliente>();
+    public List<ClienteDTO> getAll(){
+        List<ClienteDTO> clientes = clienteRepository.findAll().stream().map(this::entityToDTO).toList();
+        if (clientes.isEmpty()) {
+            return new ArrayList<>();
         }else {
             return clientes;
         }
@@ -38,8 +39,9 @@ public class ClientesService {
      * @param id del cliente a buscar
      * @return el cliente con el id introducido
      */
-    public Cliente getClienteById(int id){
+    public ClienteDTO getClienteById(int id){
         return clienteRepository.findById(id)
+                .map(this::entityToDTO)
                 .orElseThrow(()->new RecordNotFoundException("No existe un cliente con el id " + id));
     }
 
@@ -59,7 +61,7 @@ public class ClientesService {
      * @param clienteNuevo
      * @param id
      */
-    public void updateCliente(Cliente clienteNuevo, int id){
+    public ClienteDTO updateCliente(Cliente clienteNuevo, int id){
         if (clienteNuevo!= null && clienteRepository.existsById(id)){
             Optional<Cliente> cliente = clienteRepository.findById(id);
             Cliente newCliente = cliente.get();
@@ -67,6 +69,8 @@ public class ClientesService {
             newCliente.setNombre(clienteNuevo.getNombre());
             newCliente.setPassword(clienteNuevo.getPassword());
             clienteRepository.save(newCliente);
+
+            return entityToDTO(newCliente);
         }else {
             throw new RecordNotFoundException("No existe un cliente con el id " + id);
         }
@@ -86,7 +90,7 @@ public class ClientesService {
 
 
     /**
-     * Devuelve un cliente a partir de su email.
+     * Devuelve un cliente a partir de su email. No se utilizamos DTO porque este es el método que usa el login.
      * @param email
      * @return cliente encontrado
      */
@@ -124,8 +128,19 @@ public class ClientesService {
      * @param nombre Cadena de texto a buscar.
      * @return Lista de clientes que contienen la cadena, sin distinguir mayúsculas de minúsculas.
      */
-    public List<Cliente> getClientesByNombre(String nombre) {
-        return clienteRepository.findByNombreContainingIgnoreCase(nombre);
+    public List<ClienteDTO> getClientesByNombre(String nombre) {
+        return clienteRepository.findByNombreContainingIgnoreCase(nombre)
+                .stream().map(this::entityToDTO).toList();
+    }
+
+    public ClienteDTO entityToDTO(Cliente cliente){
+        ClienteDTO clienteDTO = new ClienteDTO();
+        clienteDTO.setId(cliente.getId());
+        clienteDTO.setEmail(cliente.getEmail());
+        clienteDTO.setNombre(cliente.getNombre());
+        clienteDTO.setFechaRegistro(cliente.getFechaRegistro());
+
+        return clienteDTO;
     }
 
 }

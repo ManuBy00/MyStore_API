@@ -65,11 +65,12 @@ public class EmpleadosService {
      * @param nuevoEmpleado Datos actualizados.
      */
     @Transactional
-    public void updateEmpleado(int id, Empleado nuevoEmpleado) {
+    public Empleado updateEmpleado(int id, Empleado nuevoEmpleado) {
         Empleado empleadoExistente = getEmpleadoById(id);
 
         empleadoExistente.setNombre(nuevoEmpleado.getNombre());
         empleadoRepository.save(empleadoExistente);
+        return empleadoExistente;
     }
 
 }

@@ -1,12 +1,18 @@
 package com.mby.myStore.Controllers;
 
 
+import com.mby.myStore.DTO.ClienteDTO;
 import com.mby.myStore.DTO.LoginData;
 import com.mby.myStore.Exceptions.DuplicateRecordException;
 import com.mby.myStore.Exceptions.InvalidCredentialsException;
 import com.mby.myStore.Exceptions.RecordNotFoundException;
 import com.mby.myStore.Model.Cliente;
 import com.mby.myStore.Services.ClientesService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,95 +22,101 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/clientes")
+@Tag(name = "Gestión de Clientes", description = "Operaciones CRUD y búsqueda para la administración de clientes")
 public class ClientesController {
 
     @Autowired
     ClientesService clienteServices;
 
-    /**
-     * Obtiene la lista completa de clientes registrados en el sistema.
-     * @return ResponseEntity con la lista de clientes y estado 200 OK.
-     */
     @CrossOrigin
     @GetMapping
-    public ResponseEntity<List<Cliente>> getClientes(){
-        List<Cliente> clientes = clienteServices.getAll();
+    @Operation(summary = "Obtener todos los clientes", description = "Retorna una lista con todos los clientes registrados en la base de datos.")
+    @ApiResponse(responseCode = "200", description = "Lista de clientes recuperada con éxito")
+    public ResponseEntity<List<ClienteDTO>> getClientes(){
+        List<ClienteDTO> clientes = clienteServices.getAll();
         return ResponseEntity.ok(clientes);
     }
 
-
-    /**
-     * Busca un cliente específico mediante su identificador único.
-     * @param id Identificador primario del cliente.
-     * @return ResponseEntity con el cliente encontrado o mensaje de error 404 si no existe.
-     */
     @CrossOrigin
     @GetMapping("/{id}")
-    public ResponseEntity<?> getClienteById(@PathVariable int id){
+    @Operation(summary = "Obtener cliente por ID", description = "Busca un cliente específico en el sistema mediante su identificador único.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cliente encontrado"),
+            @ApiResponse(responseCode = "404", description = "No se encontró el cliente con el ID proporcionado")
+    })
+    public ResponseEntity<?> getClienteById(
+            @Parameter(description = "ID del cliente a buscar", example = "1")
+            @PathVariable int id){
         try {
-            Cliente cliente = clienteServices.getClienteById(id);
+            ClienteDTO cliente = clienteServices.getClienteById(id);
             return ResponseEntity.ok(cliente);
-        }catch (RecordNotFoundException e){
+        } catch (RecordNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
-    /**
-     * Registra un nuevo cliente en la base de datos.
-     * @param cliente Objeto cliente con los datos a persistir.
-     * @return ResponseEntity con el cliente creado (201) o error de duplicidad (409).
-     */
     @CrossOrigin
     @PostMapping
+    @Operation(summary = "Registrar nuevo cliente", description = "Crea un nuevo perfil de cliente. El email debe ser único en el sistema.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Cliente registrado correctamente"),
+            @ApiResponse(responseCode = "409", description = "Conflicto: Ya existe un cliente con ese email"),
+            @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
+    })
     public ResponseEntity<?> createCliente(@RequestBody Cliente cliente){
         try {
             clienteServices.addCliente(cliente);
             return ResponseEntity.status(HttpStatus.CREATED).body(cliente);
-        }catch (DuplicateRecordException e){
+        } catch (DuplicateRecordException e){
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
     }
 
-    /**
-     * Elimina un cliente del sistema permanentemente.
-     * @param id Identificador del cliente a eliminar.
-     * @return ResponseEntity con estado 204 (No Content) o 404 si el ID no existe.
-     */
     @CrossOrigin
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteCliente(@PathVariable int id){
+    @Operation(summary = "Eliminar un cliente", description = "Borra permanentemente el registro de un cliente del sistema.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Cliente eliminado con éxito (No Content)"),
+            @ApiResponse(responseCode = "404", description = "El cliente no existe"),
+            @ApiResponse(responseCode = "409", description = "Conflicto: El cliente tiene citas asociadas y no puede ser borrado")
+    })
+    public ResponseEntity<?> deleteCliente(
+            @Parameter(description = "ID del cliente a eliminar", example = "5")
+            @PathVariable int id){
         try {
             clienteServices.deleteCliente(id);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        }catch (RecordNotFoundException e){
+        } catch (RecordNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
-    /**
-     * Actualiza la información de un cliente existente.
-     * @param id Identificador del cliente a modificar.
-     * @param cliente Objeto con los nuevos datos del cliente.
-     * @return ResponseEntity con mensaje de éxito o 404 si no se encuentra el recurso.
-     */
     @CrossOrigin
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCliente(@PathVariable int id, @RequestBody Cliente cliente){
+    @Operation(summary = "Actualizar cliente", description = "Modifica los datos de un cliente existente identificado por su ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cliente actualizado correctamente"),
+            @ApiResponse(responseCode = "404", description = "El cliente solicitado no existe"),
+            @ApiResponse(responseCode = "400", description = "Error en los datos proporcionados")
+    })
+    public ResponseEntity<?> updateCliente(
+            @Parameter(description = "ID del cliente a actualizar", example = "1")
+            @PathVariable int id,
+            @RequestBody Cliente cliente){
         try{
-            clienteServices.updateCliente(cliente, id);
-            return ResponseEntity.ok("Cliente Actualizado Correctamente");
-        }catch (RecordNotFoundException e){
+            ClienteDTO clienteActualizado = clienteServices.updateCliente(cliente, id);
+            return ResponseEntity.ok(clienteActualizado);
+        } catch (RecordNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
-    /**
-     * Filtra clientes cuyo nombre contenga la cadena de texto proporcionada.
-     * @param nombre Texto o patrón de búsqueda para el nombre.
-     * @return ResponseEntity con la lista de coincidencias (case-insensitive).
-     */
     @GetMapping("/search")
-    public ResponseEntity<List<Cliente>> searchClientes(@RequestParam String nombre) {
+    @Operation(summary = "Buscar clientes por nombre", description = "Filtra la lista de clientes buscando coincidencias parciales por nombre.")
+    @ApiResponse(responseCode = "200", description = "Lista de coincidencias encontrada")
+    public ResponseEntity<List<ClienteDTO>> searchClientes(
+            @Parameter(description = "Nombre o fragmento del nombre a buscar", example = "Juan")
+            @RequestParam String nombre) {
         return ResponseEntity.ok(clienteServices.getClientesByNombre(nombre));
     }
 }
