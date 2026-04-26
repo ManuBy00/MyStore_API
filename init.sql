@@ -13,7 +13,7 @@ CREATE TABLE clientes (
 );
 
 -- 2. Tabla de empleados
--- Define al personal disponible para las citas
+-- Define al personal disponible para las appointments
 CREATE TABLE empleados (
                           id INT AUTO_INCREMENT PRIMARY KEY,
                           nombre VARCHAR(100) NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE servicios (
 
 -- 4. Tabla de Citas (Relación N:1 con las anteriores)
 -- Centraliza la lógica de reservas y estados [cite: 151, 361]
-CREATE TABLE citas (
+CREATE TABLE appointments (
                        id INT AUTO_INCREMENT PRIMARY KEY,
                        fecha_hora DATETIME NOT NULL,
                        estado ENUM('PENDIENTE', 'CONFIRMADA', 'CANCELADA', 'FINALIZADA') DEFAULT 'PENDIENTE',

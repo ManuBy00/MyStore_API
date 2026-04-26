@@ -8,20 +8,25 @@ import java.time.LocalTime;
 
 @Data
 @Schema(description = "Modelo simplificado para crear o actualizar una cita")
-public class CitaDTO {
+public class AppointmentDTO {
+
+    private int id;
 
     @Schema(example = "2026-05-15")
-    private LocalDate fecha;
+    private LocalDate date;
 
     @Schema(type = "string", pattern = "HH:mm:ss", example = "10:30:00")
-    private LocalTime horaInicio;
+    private LocalTime startTime;
+
+    @Schema(type = "string", example = "642506254")
+    private String telNumber;
 
     @Schema(description = "ID del cliente", example = "1")
-    private int clienteId;
+    private int clientId;
 
     @Schema(description = "ID del barbero", example = "1")
-    private int empleadoId;
+    private int employeeId;
 
     @Schema(description = "ID del servicio", example = "2")
-    private int servicioId;
+    private int serviceId;
 }

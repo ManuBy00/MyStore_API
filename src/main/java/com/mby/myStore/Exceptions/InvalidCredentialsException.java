@@ -1,6 +1,8 @@
 package com.mby.myStore.Exceptions;
 
-public class InvalidCredentialsException extends Throwable {
-    public InvalidCredentialsException(String contraseñaIncorrecta) {
+public class InvalidCredentialsException extends RuntimeException {
+    public InvalidCredentialsException(String message) {
+        super(message);
     }
-}
+    }
+

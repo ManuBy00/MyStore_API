@@ -1,6 +1,7 @@
 package com.mby.myStore.Exceptions;
 
-public class SlotAlreadyOccupiedException extends Throwable {
-    public SlotAlreadyOccupiedException(String s) {
+public class SlotAlreadyOccupiedException extends RuntimeException {
+    public SlotAlreadyOccupiedException(String message) {
+        super(message);
     }
 }

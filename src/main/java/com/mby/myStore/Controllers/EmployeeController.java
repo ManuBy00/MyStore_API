@@ -1,8 +1,7 @@
 package com.mby.myStore.Controllers;
 
-import com.mby.myStore.Exceptions.RecordNotFoundException;
-import com.mby.myStore.Model.Empleado;
-import com.mby.myStore.Services.EmpleadosService;
+import com.mby.myStore.Model.Employee;
+import com.mby.myStore.Services.EmployeeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -15,13 +14,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/empleados")
+@RequestMapping("/employees")
 @Tag(name = "Gestión de empleados", description = "Endpoints para añadir, cancelar, modificar y buscar empleados")
 @CrossOrigin
-public class EmpleadoController {
+public class EmployeeController {
 
     @Autowired
-    private EmpleadosService empleadoService;
+    private EmployeeService empleadoService;
 
     /**
      * Obtiene el listado de todos los barberos disponibles.
@@ -32,7 +31,7 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "200", description = "Lista devuelta con éxito"),
     })
     @GetMapping
-    public ResponseEntity<List<Empleado>> getAll() {
+    public ResponseEntity<List<Employee>> getAll() {
         return ResponseEntity.ok(empleadoService.getAll());
     }
 
@@ -48,17 +47,13 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable int id) {
-        try {
-            return ResponseEntity.ok(empleadoService.getEmpleadoById(id));
-        } catch (RecordNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<Employee> getById(@PathVariable int id) {
+        return ResponseEntity.ok(empleadoService.getEmployeeById(id));
     }
 
     /**
      * Registra un nuevo empleado en la base de datos de la barbería.
-     * @param empleado Datos del empleado (nombre, etc).
+     * @param employee Datos del empleado (nombre, etc).
      * @return 201 Created con el objeto guardado.
      */
     @Operation(summary = "añadir empleado", description = "devuelve el empleado que coincida con el id introducido.")
@@ -67,15 +62,15 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @PostMapping
-    public ResponseEntity<Empleado> add(@RequestBody Empleado empleado) {
-        empleadoService.addEmpleado(empleado);
-        return ResponseEntity.status(HttpStatus.CREATED).body(empleado);
+    public ResponseEntity<Employee> add(@RequestBody Employee employee) {
+        empleadoService.addEmployee(employee);
+        return ResponseEntity.status(HttpStatus.CREATED).body(employee);
     }
 
     /**
      * Actualiza los datos de un empleado existente.
      * @param id ID del empleado a modificar.
-     * @param empleado Datos nuevos.
+     * @param employee Datos nuevos.
      * @return 200 OK con mensaje de éxito o 404 si no existe.
      */
     @Operation(summary = "Actualizar empleado", description = "Actualiza los datos de un empleado")
@@ -85,13 +80,9 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable int id, @RequestBody Empleado empleado) {
-        try {
-           Empleado emp = empleadoService.updateEmpleado(id, empleado);
-            return ResponseEntity.ok(empleado);
-        } catch (RecordNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<Employee> update(@PathVariable int id, @RequestBody Employee employee) {
+        Employee emp = empleadoService.updateEmployee(id, employee);
+        return ResponseEntity.ok(employee);
     }
 
     /**
@@ -106,12 +97,9 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable int id) {
-        try {
-            empleadoService.deleteEmpleado(id);
-            return ResponseEntity.noContent().build();
-        } catch (RecordNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<Void> delete(@PathVariable int id) {
+        empleadoService.deleteEmployee(id);
+        return ResponseEntity.noContent().build();
+
     }
 }

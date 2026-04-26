@@ -1,16 +1,16 @@
 package com.mby.myStore.DTO;
 
-import com.mby.myStore.Model.Cliente;
+import com.mby.myStore.Model.User;
+import lombok.Getter;
 
+@Getter
 public class LoginResponse {
-    private String token;
-    private Cliente cliente;
-
-    public LoginResponse(String token, Cliente cliente) {
-        this.token = token;
-        this.cliente = cliente;
-    }
     // Getters
-    public String getToken() { return token; }
-    public Cliente getCliente() { return cliente; }
+    private String token;
+    private UserDTO user;
+
+    public LoginResponse(String token, UserDTO user) {
+        this.token = token;
+        this.user = user;
+    }
 }
