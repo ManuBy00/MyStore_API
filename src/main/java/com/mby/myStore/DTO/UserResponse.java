@@ -2,14 +2,13 @@ package com.mby.myStore.DTO;
 
 import com.mby.myStore.Model.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.Column;
 import lombok.Data;
 
 import java.time.Instant;
 
 @Data
-@Schema(description = "DTO para la representación de datos de usuario en respuestas de la API (excluye credenciales)")
-public class UserDTO {
+@Schema(description = "DTO para la representación de datos de usuario en respuestas de la API (excluye contraseña)")
+public class UserResponse {
 
 
     @Schema(description = "Identificador único del usuario", example = "42")

@@ -1,8 +1,6 @@
 package com.mby.myStore.Controllers;
 
-import com.mby.myStore.DTO.UserDTO;
-import com.mby.myStore.Exceptions.DuplicateRecordException;
-import com.mby.myStore.Exceptions.RecordNotFoundException;
+import com.mby.myStore.DTO.UserResponse;
 import com.mby.myStore.Model.User;
 import com.mby.myStore.Services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,8 +27,8 @@ public class UserController {
     @GetMapping
     @Operation(summary = "Obtener todos los usuarios", description = "Retorna una lista con todos los usuarios registrados en la base de datos.")
     @ApiResponse(responseCode = "200", description = "Lista de usuarios recuperada con éxito")
-    public ResponseEntity<List<UserDTO>> getUsers(){
-        List<UserDTO> usuarios = userService.getAll();
+    public ResponseEntity<List<UserResponse>> getUsers(){
+        List<UserResponse> usuarios = userService.getAll();
         return ResponseEntity.ok(usuarios);
     }
 
@@ -40,10 +38,10 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Usuario encontrado"),
             @ApiResponse(responseCode = "404", description = "No se encontró el usuario con el ID proporcionado")})
-    public ResponseEntity<UserDTO> getUserById(
+    public ResponseEntity<UserResponse> getUserById(
             @Parameter(description = "ID del usuario a buscar", example = "1")
             @PathVariable int id){
-            UserDTO usuario = userService.getUserById(id);
+            UserResponse usuario = userService.getUserById(id);
             return ResponseEntity.ok(usuario);
 
     }
@@ -56,9 +54,9 @@ public class UserController {
             @ApiResponse(responseCode = "409", description = "Conflicto: Ya existe un usuario con ese email"),
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     })
-    public ResponseEntity<UserDTO> createUser(@RequestBody User user){
+    public ResponseEntity<UserResponse> createUser(@RequestBody User user){
         userService.addUser(user);
-        UserDTO userdto = userService.entityToDTO(user);
+        UserResponse userdto = userService.entityToDTO(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(userdto);
     }
 
@@ -86,18 +84,18 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "El usuario solicitado no existe"),
             @ApiResponse(responseCode = "400", description = "Error en los datos proporcionados")
     })
-    public ResponseEntity<UserDTO> updateUser(
+    public ResponseEntity<UserResponse> updateUser(
             @Parameter(description = "ID del usuario a actualizar", example = "1")
             @PathVariable int id,
             @RequestBody User user){
-        UserDTO clienteActualizado = userService.updateUser(user, id);
+        UserResponse clienteActualizado = userService.updateUser(user, id);
         return ResponseEntity.ok(clienteActualizado);
     }
 
     @GetMapping("/search")
     @Operation(summary = "Buscar usuarios por nombre", description = "Filtra la lista de usuarios buscando coincidencias parciales por nombre.")
     @ApiResponse(responseCode = "200", description = "Lista de coincidencias encontrada")
-    public ResponseEntity<List<UserDTO>> searchUser(
+    public ResponseEntity<List<UserResponse>> searchUser(
             @Parameter(description = "Nombre o fragmento del nombre a buscar", example = "Juan")
             @RequestParam String name) {
         return ResponseEntity.ok(userService.getUsersByName(name));

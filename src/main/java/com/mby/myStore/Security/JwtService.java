@@ -1,7 +1,6 @@
 package com.mby.myStore.Security;
 
-import com.mby.myStore.DTO.UserDTO;
-import com.mby.myStore.Model.User;
+import com.mby.myStore.DTO.UserResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -19,7 +18,7 @@ public class JwtService {
      * @param user El objeto usuario que contiene email y role.
      * @return String con el token generado.
      */
-    public String generateToken(UserDTO user) {
+    public String generateToken(UserResponse user) {
         return Jwts.builder()
                 .setSubject(user.getEmail())
                 .claim("role", user.getRole())

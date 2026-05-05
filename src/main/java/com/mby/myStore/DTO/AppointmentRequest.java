@@ -7,8 +7,10 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
-@Schema(description = "Modelo simplificado para crear o actualizar una cita")
-public class AppointmentDTO {
+@Schema(description = "DTO para crear o actualizar una cita. Es lo que requiere la api para operaciones de escritura")
+public class AppointmentRequest {
+
+    //DTO que recibe la api para operaciones de creación o edición
 
     private int id;
 

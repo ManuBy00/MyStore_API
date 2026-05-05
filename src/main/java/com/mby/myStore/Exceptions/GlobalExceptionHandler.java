@@ -47,6 +47,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
+    //7. 401 token expirado
+    @ExceptionHandler(ExpiredJwtToken.class)
+    public ResponseEntity<String> handleExpiredJwtToken(ExpiredJwtToken token) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(token.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<String> handleDateError(MethodArgumentNotValidException ex) {
         // Pillamos el primer error de validación que encuentre

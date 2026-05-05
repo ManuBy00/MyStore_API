@@ -1,8 +1,8 @@
 package com.mby.myStore.Controllers;
 
-import com.mby.myStore.DTO.AppointmentDTO;
-import com.mby.myStore.DTO.AppointmentViewDTO;
-import com.mby.myStore.DTO.DashboardSummary;
+import com.mby.myStore.DTO.AppointmentRequest;
+import com.mby.myStore.DTO.AppointmentResponse;
+import com.mby.myStore.DTO.DashboardResponse;
 import com.mby.myStore.DTO.ServiceCountDTO;
 import com.mby.myStore.Model.Service;
 import com.mby.myStore.Services.AppointmentService;
@@ -48,9 +48,9 @@ public class AppointmentController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @PostMapping
-    public ResponseEntity<AppointmentDTO> createAppointment(@RequestBody AppointmentDTO appointment) {
-        appointmentService.createAppointment(appointment);
-        return ResponseEntity.status(HttpStatus.CREATED).body(appointment);
+    public ResponseEntity<AppointmentResponse> createAppointment(@RequestBody AppointmentRequest appointment) {
+        AppointmentResponse response = appointmentService.createAppointment(appointment);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -64,8 +64,8 @@ public class AppointmentController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<AppointmentDTO> updateAppointment(@PathVariable int id, @RequestBody AppointmentDTO cita) {
-            AppointmentDTO actualizada = appointmentService.updateAppointment(id, cita);
+    public ResponseEntity<AppointmentResponse> updateAppointment(@PathVariable int id, @RequestBody AppointmentRequest cita) {
+            AppointmentResponse actualizada = appointmentService.updateAppointment(id, cita);
             return ResponseEntity.ok(actualizada);
     }
     
@@ -89,7 +89,6 @@ public class AppointmentController {
 
     /**
      * Endpoint clave para la App: Devuelve las horas disponibles en tramos de 30min.
-     * Uso: /citas/disponibilidad?empleadoId=1&fecha=2026-05-10
      */
     @Operation(summary = "Obtener horas libres",
             description = "Calcula los huecos disponibles de un barbero específico en una fecha determinada, devolviendo tramos de 30 minutos.")
@@ -121,8 +120,8 @@ public class AppointmentController {
             @ApiResponse(responseCode = "400", description = "Fecha inválida o formato incorrecto (debe ser YYYY-MM-DD)"),
             @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
-    public ResponseEntity<List<AppointmentViewDTO>> getAppointmentByDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        List<AppointmentViewDTO> dtoViewList= appointmentService.getAppointmentsByDate(date);
+    public ResponseEntity<List<AppointmentResponse>> getAppointmentByDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        List<AppointmentResponse> dtoViewList= appointmentService.getAppointmentsByDate(date);
         return ResponseEntity.ok(dtoViewList);
     }
 
@@ -139,12 +138,12 @@ public class AppointmentController {
             @ApiResponse(responseCode = "500", description = "Error interno al calcular las estadísticas")
     })
     @GetMapping("/dashboardSummary")
-    public ResponseEntity<DashboardSummary> getDailyServices() {
+    public ResponseEntity<DashboardResponse> getDailyServices() {
         List<ServiceCountDTO> serviceslist = appointmentService.getTodayServiceStats();
         int activeEmployees = employeeService.getActiveEmployeesCount();
         int productsNumber = 0;
 
-        DashboardSummary dashboardDTO = new DashboardSummary();
+        DashboardResponse dashboardDTO = new DashboardResponse();
         dashboardDTO.setServiceCountDTO(serviceslist);
         dashboardDTO.setEmployeesNumber(activeEmployees);
         dashboardDTO.setProductsNumber(productsNumber);

@@ -11,9 +11,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import java.io.IOException;
 import java.util.List;
+
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
+import org.springframework.lang.NonNull;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -22,32 +26,62 @@ public class JwtFilter extends OncePerRequestFilter {
     private JwtService jwtService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        final String authHeader = request.getHeader("Authorization");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        // 1. Si no hay token o no empieza por Bearer, seguimos la cadena (para rutas públicas)
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
             String token = authHeader.substring(7);
             String username = jwtService.extractEmail(token);
-
-            // EXTRAEMOS EL ROL DEL TOKEN
             String role = jwtService.extractRole(token);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-                //  CREAMOS LA AUTORIDAD (CON EL PREFIJO ROLE_ QUE PIDE SPRING)
-                // Usamos SimpleGrantedAuthority para que Spring entienda el permiso
+                // Creamos la autoridad con el prefijo ROLE_
                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
 
-                // PASAMOS LA AUTORIDAD EN LUGAR DE LA LISTA VACÍA
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(username, null, List.of(authority));
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
+
+            // Si todo va bien, continuamos
+            filterChain.doFilter(request, response);
+
+        } catch (ExpiredJwtException e) {
+            handleException(response, "El token ha expirado", e.getMessage(), HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (SignatureException | MalformedJwtException e) {
+            handleException(response, "Token inválido o firma corrupta", e.getMessage(), HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (Exception e) {
+            handleException(response, "Error procesando el token", e.getMessage(), HttpServletResponse.SC_FORBIDDEN);
         }
-        filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Método auxiliar para enviar una respuesta JSON limpia en caso de error de seguridad
+     */
+    private void handleException(HttpServletResponse response, String error, String message, int status) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        // Creamos un JSON manual para no complicar el filtro con librerías extra
+        String jsonResponse = String.format(
+                "{\"status\": %d, \"error\": \"%s\", \"message\": \"%s\"}",
+                status, error, message
+        );
+
+        response.getWriter().write(jsonResponse);
     }
 }

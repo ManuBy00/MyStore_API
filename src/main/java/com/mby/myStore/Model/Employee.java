@@ -1,6 +1,8 @@
 package com.mby.myStore.Model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -9,8 +11,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.time.LocalDate;
+import java.util.*;
 
 @Getter
 @Setter
@@ -31,10 +33,11 @@ public class Employee {
     @Schema(description = "Nombre completo del empleado", example = "Carlos Rodríguez", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    @Size(max = 50)
-    @Column(name = "speciality", length = 50)
-    @Schema(description = "Especialidad técnica del empleado", example = "Corte de cabello y Barba")
-    private String speciality;
+
+    @Column(name = "hire_date")
+    @Schema(description = "Fecha de alta del empleado", example = "12/08/2025")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate hireDate;
 
     @ColumnDefault("1")
     @Column(name = "active")
@@ -46,5 +49,10 @@ public class Employee {
     @JsonIgnore
     @Schema(description = "Listado de citas asociadas al empleado", hidden = true)
     private Set<Appointment> appointments = new LinkedHashSet<>();
+
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("employee") //Para evitar bucles infinitos en el JSON
+    private List<Absence> absences = new ArrayList<>();
 
 }

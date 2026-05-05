@@ -1,8 +1,8 @@
 package com.mby.myStore.Services;
 
 
-import com.mby.myStore.DTO.AppointmentDTO;
-import com.mby.myStore.DTO.AppointmentViewDTO;
+import com.mby.myStore.DTO.AppointmentRequest;
+import com.mby.myStore.DTO.AppointmentResponse;
 import com.mby.myStore.DTO.ServiceCountDTO;
 import com.mby.myStore.Exceptions.DateNotValidException;
 import com.mby.myStore.Exceptions.RecordNotFoundException;
@@ -11,10 +11,7 @@ import com.mby.myStore.Model.Appointment;
 import com.mby.myStore.Model.User;
 import com.mby.myStore.Model.Employee;
 import com.mby.myStore.Model.Service;
-import com.mby.myStore.Repositories.AppointmentRepository;
-import com.mby.myStore.Repositories.UserRepository;
-import com.mby.myStore.Repositories.EmployeeRepository;
-import com.mby.myStore.Repositories.ServiceRepository;
+import com.mby.myStore.Repositories.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -22,6 +19,7 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,12 +39,15 @@ public class AppointmentService {
     @Autowired
     private EmployeeRepository employeeRepository;
 
+    @Autowired
+    private AbsenceRepository absenceRepository;
+
     /**
      * Registra una nueva cita calculando automáticamente la duración y validando disponibilidad. Si es fin de semana
      * @param dto Objeto con los datos de la reserva (Fecha, Hora Inicio, IDs de relaciones).
      * @throws SlotAlreadyOccupiedException Si el horario ya está comprometido para ese empleado.
      */
-    public AppointmentDTO createAppointment(AppointmentDTO dto) throws SlotAlreadyOccupiedException {
+    public AppointmentResponse createAppointment(AppointmentRequest dto) throws SlotAlreadyOccupiedException {
         //  Carga de dependencias con mensajes de error
         User user = userRepository.findById(dto.getClientId())
                 .orElseThrow(() -> new RecordNotFoundException("Cliente ID " + dto.getClientId() + " no encontrado"));
@@ -54,6 +55,8 @@ public class AppointmentService {
                 .orElseThrow(() -> new RecordNotFoundException("Empleado ID " + dto.getEmployeeId() + " no encontrado"));
         Service service = serviceRepository.findById(dto.getServiceId())
                 .orElseThrow(() -> new RecordNotFoundException("Servicio ID " + dto.getServiceId() + " no encontrado"));
+
+        checkAbsence(dto.getEmployeeId(), dto.getDate());
 
         //validamos que la fecha no sea anterior a hoy
         if (dto.getDate().isBefore(LocalDate.now())) {
@@ -88,7 +91,8 @@ public class AppointmentService {
         }
 
         appointmentRepository.save(appointment);
-        return mapToDTO(appointment);
+
+        return mapToViewDTO(appointment);
     }
 
     /**
@@ -108,7 +112,7 @@ public class AppointmentService {
      * @param citaEditada Objeto con los nuevos valores.
      */
     @Transactional
-    public AppointmentDTO updateAppointment(int id, AppointmentDTO citaEditada) throws SlotAlreadyOccupiedException {
+    public AppointmentResponse updateAppointment(int id, AppointmentRequest citaEditada) throws SlotAlreadyOccupiedException {
         // Verificamos que la cita existe
         Appointment appointmentExistente = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException("No se encontró la cita con ID: " + id));
@@ -123,6 +127,8 @@ public class AppointmentService {
         LocalTime nuevaHoraFin = citaEditada.getStartTime().plusMinutes(service.getDurationMinutes());
 
         //validación de fecha
+        checkAbsence(citaEditada.getId(), citaEditada.getDate());
+
         if (citaEditada.getDate().isBefore(LocalDate.now())) {
             throw new DateNotValidException("No se pueden programar citas en fechas pasadas.");
         }
@@ -151,11 +157,11 @@ public class AppointmentService {
 
         // Guardamos y devolvemos el DTO básico (Usando tu método entityToDTO)
         appointmentRepository.save(appointmentExistente);
-        return mapToDTO(appointmentExistente);
+        return mapToViewDTO(appointmentExistente);
     }
 
 
-    public List<AppointmentViewDTO> getAppointmentsByDate(LocalDate date) {
+    public List<AppointmentResponse> getAppointmentsByDate(LocalDate date) {
         List<Appointment> appointments = appointmentRepository.getAppointmentsByDate(date);
 
         // Convertimos la lista de Entidades a DTOs de vista
@@ -179,6 +185,11 @@ public class AppointmentService {
      * Genera tramos horarios y los filtra comparándolos con las citas reales del día.
      */
     public List<LocalTime> getAvailableHours(int empleadoId, LocalDate fecha, Integer excludeId) {
+        //comprobamos si el empleado está de baja en la fecha indicada
+        if (absenceRepository.isEmployeeOnLeave(empleadoId, fecha)) {
+            return Collections.emptyList();
+        }
+
         // 1. Definimos los tramos horarios
         List<LocalTime> todosLosTramos = List.of(
                 LocalTime.of(16, 0), LocalTime.of(16, 30),
@@ -222,7 +233,7 @@ public class AppointmentService {
      * @param nombre Cadena de texto a buscar (nombre del cliente).
      * @return Lista de citas que coinciden con el criterio.
      */
-    public List<AppointmentViewDTO> buscarCitasPorNombreCliente(String nombre) {
+    public List<AppointmentResponse> buscarCitasPorNombreCliente(String nombre) {
         // Llamamos al método con la @Query personalizada que creamos en el Repository
         return appointmentRepository.findByUserName(nombre).stream().map(this::mapToViewDTO).toList();
     }
@@ -231,8 +242,8 @@ public class AppointmentService {
      * Convierte una entidad Cita en un objeto CitaDTO.
      * Extrae solo los IDs de las relaciones para simplificar la respuesta.
      */
-    public AppointmentDTO mapToDTO(Appointment appointment) {
-        AppointmentDTO dto = new AppointmentDTO();
+    public AppointmentRequest mapToDTO(Appointment appointment) {
+        AppointmentRequest dto = new AppointmentRequest();
 
         // Copiamos los datos básicos
         dto.setDate(appointment.getDate());
@@ -248,8 +259,8 @@ public class AppointmentService {
 
 
 
-    private AppointmentViewDTO mapToViewDTO(Appointment entity) {
-        AppointmentViewDTO dto = new AppointmentViewDTO();
+    private AppointmentResponse mapToViewDTO(Appointment entity) {
+        AppointmentResponse dto = new AppointmentResponse();
         dto.setId(entity.getId());
         dto.setDate(entity.getDate());
         dto.setStartTime(entity.getStartTime());
@@ -271,6 +282,12 @@ public class AppointmentService {
 
     public List<ServiceCountDTO> getTodayServiceStats() {
         return appointmentRepository.countServicesPerDay(LocalDate.now());
+    }
+
+    public void checkAbsence(int idEmpleado, LocalDate fecha) {
+        if (absenceRepository.isEmployeeOnLeave(idEmpleado, fecha)) {
+            throw new DateNotValidException("El profesional no está disponible en la fecha seleccionada por motivos de baja o vacaciones.");
+        }
     }
 
 

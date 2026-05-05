@@ -1,11 +1,8 @@
 package com.mby.myStore.Controllers;
 
-import com.mby.myStore.DTO.LoginData;
+import com.mby.myStore.DTO.LoginRequest;
 import com.mby.myStore.DTO.LoginResponse;
-import com.mby.myStore.DTO.UserDTO;
-import com.mby.myStore.Exceptions.DuplicateRecordException;
-import com.mby.myStore.Exceptions.InvalidCredentialsException;
-import com.mby.myStore.Exceptions.RecordNotFoundException;
+import com.mby.myStore.DTO.UserResponse;
 import com.mby.myStore.Model.User;
 import com.mby.myStore.Security.JwtService;
 import com.mby.myStore.Services.UserService;
@@ -35,9 +32,9 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Email o contraseña incorrectos"),
             @ApiResponse(responseCode = "404", description = "Email no registrado")
     })
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginData loginData) {
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginData) {
         // Comprobar email y password en la DB
-        UserDTO user = userService.login(loginData.getEmail(), loginData.getPassword());
+        UserResponse user = userService.login(loginData.getEmail(), loginData.getPassword());
 
         // Si ha llegado aquí es que el login es correcto. Generamos la "llave" (token)
         // Usamos el email como identificador único en el token
@@ -64,7 +61,7 @@ public class AuthController {
         userService.addUser(user);
         //generar el token directamente para que
         //tras registrarse entre automáticamente a la App
-        UserDTO userdto = userService.entityToDTO(user);
+        UserResponse userdto = userService.entityToDTO(user);
         String token = jwtService.generateToken(userdto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new LoginResponse(token, userdto));

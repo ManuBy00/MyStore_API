@@ -7,7 +7,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class DashboardSummary {
+public class DashboardResponse {
     List<ServiceCountDTO> serviceCountDTO;
     int employeesNumber;
     int productsNumber;

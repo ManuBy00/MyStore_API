@@ -1,6 +1,6 @@
 package com.mby.myStore.Services;
 
-import com.mby.myStore.DTO.UserDTO;
+import com.mby.myStore.DTO.UserResponse;
 import com.mby.myStore.Exceptions.DuplicateRecordException;
 import com.mby.myStore.Exceptions.InvalidCredentialsException;
 import com.mby.myStore.Exceptions.RecordNotFoundException;
@@ -26,8 +26,8 @@ public class UserService {
     /**
      * Devuelve una lista de todos los clientes
      */
-    public List<UserDTO> getAll(){
-        List<UserDTO> users = userRepository.findAll().stream().map(this::entityToDTO).toList();
+    public List<UserResponse> getAll(){
+        List<UserResponse> users = userRepository.findAll().stream().map(this::entityToDTO).toList();
         if (users.isEmpty()) {
             return new ArrayList<>();
         }else {
@@ -40,7 +40,7 @@ public class UserService {
      * @param id del cliente a buscar
      * @return el cliente con el id introducido
      */
-    public UserDTO getUserById(int id){
+    public UserResponse getUserById(int id){
         return userRepository.findById(id)
                 .map(this::entityToDTO)
                 .orElseThrow(()->new RecordNotFoundException("No existe un cliente con el id " + id));
@@ -62,7 +62,7 @@ public class UserService {
      * @param userNuevo
      * @param id
      */
-    public UserDTO updateUser(User userNuevo, int id){
+    public UserResponse updateUser(User userNuevo, int id){
         if (userNuevo != null && userRepository.existsById(id)){
             Optional<User> cliente = userRepository.findById(id);
             User newUser = cliente.get();
@@ -111,7 +111,7 @@ public class UserService {
      * @return El objeto Cliente si la autenticación es exitosa.
      * @throws InvalidCredentialsException Si el usuario no existe o la contraseña no coincide.
      */
-    public UserDTO login(String email, String password) throws InvalidCredentialsException {
+    public UserResponse login(String email, String password) throws InvalidCredentialsException {
         User user = getUserByEmail(email);
         if (user == null) {
             throw new RecordNotFoundException("No existe un cliente con el email " + email);
@@ -129,26 +129,26 @@ public class UserService {
      * @param nombre Cadena de texto a buscar.
      * @return Lista de clientes que contienen la cadena, sin distinguir mayúsculas de minúsculas.
      */
-    public List<UserDTO> getUsersByName(String nombre) {
+    public List<UserResponse> getUsersByName(String nombre) {
         return userRepository.findByNameContainingIgnoreCase(nombre)
                 .stream().map(this::entityToDTO).toList();
     }
 
-    public List<UserDTO> getUsersByRol(Role rol) {
+    public List<UserResponse> getUsersByRol(Role rol) {
         return  userRepository.findByRole(rol)
                 .stream().map(this::entityToDTO).toList();
     }
 
-    public UserDTO entityToDTO(User user){
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId(user.getId());
-        userDTO.setEmail(user.getEmail());
-        userDTO.setName(user.getName());
-        userDTO.setTelNumber(user.getTelNumber());
-        userDTO.setRegisterDate(user.getRegisterDate());
-        userDTO.setRole(user.getRole());
+    public UserResponse entityToDTO(User user){
+        UserResponse userResponse = new UserResponse();
+        userResponse.setId(user.getId());
+        userResponse.setEmail(user.getEmail());
+        userResponse.setName(user.getName());
+        userResponse.setTelNumber(user.getTelNumber());
+        userResponse.setRegisterDate(user.getRegisterDate());
+        userResponse.setRole(user.getRole());
 
-        return userDTO;
+        return userResponse;
     }
 
 }

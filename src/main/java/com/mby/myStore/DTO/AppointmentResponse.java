@@ -11,7 +11,7 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "DTO optimizado para mostrar la información de una cita en la interfaz de usuario (Cards/Listas). En lugar de mostrar el id muestra el nombre de las entidades relacionadas")
-public class AppointmentViewDTO {
+public class AppointmentResponse {
 
     @Schema(description = "ID de la cita", example = "101", accessMode =  Schema.AccessMode.READ_ONLY)
     private int id;

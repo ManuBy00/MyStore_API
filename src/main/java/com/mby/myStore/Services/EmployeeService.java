@@ -68,6 +68,8 @@ public class EmployeeService {
         Employee employeeExistente = getEmployeeById(id);
 
         employeeExistente.setName(nuevoEmployee.getName());
+        employeeExistente.setActive(nuevoEmployee.getActive());
+        employeeExistente.setHireDate(nuevoEmployee.getHireDate());
         employeeRepository.save(employeeExistente);
         return employeeExistente;
     }
