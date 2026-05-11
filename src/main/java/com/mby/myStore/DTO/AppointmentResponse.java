@@ -1,5 +1,6 @@
 package com.mby.myStore.DTO;
 
+import com.mby.myStore.Model.AppoStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,7 +15,7 @@ import java.time.LocalTime;
 public class AppointmentResponse {
 
     @Schema(description = "ID de la cita", example = "101", accessMode =  Schema.AccessMode.READ_ONLY)
-    private int id;
+    private Long id;
 
     @Schema(description = "Fecha de la cita", example = "2024-12-20")
     private LocalDate date;
@@ -26,24 +27,29 @@ public class AppointmentResponse {
     @Schema(description = "Nombre completo del cliente", example = "Ana García")
     private String customerName;
 
+    private Long customerId;
+
     @Schema(description = "Número de teléfono de cliente")
     private String telNumber;
 
     @Schema(description = "Nombre del servicio contratado", example = "Manicura Premium")
     private String serviceName;
 
+    @Schema(description = "ID del servicio contratado", example = "1")
+    private Long serviceId;
+
     @Schema(description = "Nombre del empleado que atenderá", example = "Elena Soler")
     private String employeeName;
 
     @Schema(description = "ID del barbero", example = "1")
-    private int employeeId;
+    private Long employeeId;
 
     @Schema(description = "Duración total en minutos", example = "45")
-    private int durationMinutes;
+    private Long durationMinutes;
 
     @Schema(description = "Precio final del servicio", example = "25.00")
     private Double price;
 
     @Schema(description = "Estado de la cita")
-    private String status;
+    private AppoStatus status;
 }

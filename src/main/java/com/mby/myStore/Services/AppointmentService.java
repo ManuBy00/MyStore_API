@@ -7,10 +7,7 @@ import com.mby.myStore.DTO.ServiceCountDTO;
 import com.mby.myStore.Exceptions.DateNotValidException;
 import com.mby.myStore.Exceptions.RecordNotFoundException;
 import com.mby.myStore.Exceptions.SlotAlreadyOccupiedException;
-import com.mby.myStore.Model.Appointment;
-import com.mby.myStore.Model.User;
-import com.mby.myStore.Model.Employee;
-import com.mby.myStore.Model.Service;
+import com.mby.myStore.Model.*;
 import com.mby.myStore.Repositories.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,7 +76,7 @@ public class AppointmentService {
 
         // Valores automáticos
         appointment.setCreatedAt(Instant.now());
-        appointment.setStatus("Confirmada");
+        appointment.setStatus(AppoStatus.CONFIRMED);
 
         // Cálculo de fin basado en la duración del servicio recuperado
         appointment.setEndTime(dto.getStartTime().plusMinutes(service.getDurationMinutes()));
@@ -98,7 +95,7 @@ public class AppointmentService {
     /**
      * Elimina una cita existente tras verificar su presencia en la base de datos.
      */
-    public void deleteAppointment(int id) {
+    public void deleteAppointment(Long id) {
         if (appointmentRepository.existsById(id)){
             appointmentRepository.deleteById(id);
         }else {
@@ -112,7 +109,7 @@ public class AppointmentService {
      * @param citaEditada Objeto con los nuevos valores.
      */
     @Transactional
-    public AppointmentResponse updateAppointment(int id, AppointmentRequest citaEditada) throws SlotAlreadyOccupiedException {
+    public AppointmentResponse updateAppointment(Long id, AppointmentRequest citaEditada) throws SlotAlreadyOccupiedException {
         // Verificamos que la cita existe
         Appointment appointmentExistente = appointmentRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException("No se encontró la cita con ID: " + id));
@@ -154,6 +151,7 @@ public class AppointmentService {
         appointmentExistente.setEndTime(nuevaHoraFin);
         appointmentExistente.setEmployee(employee);
         appointmentExistente.setService(service);
+        appointmentExistente.setStatus(citaEditada.getStatus());
 
         // Guardamos y devolvemos el DTO básico (Usando tu método entityToDTO)
         appointmentRepository.save(appointmentExistente);
@@ -173,18 +171,14 @@ public class AppointmentService {
 
 
     boolean checkAvailability(Appointment appointment) {
-        if(appointmentRepository.checkAvailability(appointment.getEmployee(), appointment.getStartTime(), appointment.getEndTime(), appointment.getDate()).isEmpty()) {
-            return true;
-        }else {
-            return false;
-        }
+        return appointmentRepository.checkAvailability(appointment.getEmployee(), appointment.getStartTime(), appointment.getEndTime(), appointment.getDate()).isEmpty();
     }
 
     /**
      * Algoritmo principal para mostrar la agenda disponible en la App Android. permitiendo excluir una cita específica (útil para ediciones).
      * Genera tramos horarios y los filtra comparándolos con las citas reales del día.
      */
-    public List<LocalTime> getAvailableHours(int empleadoId, LocalDate fecha, Integer excludeId) {
+    public List<LocalTime> getAvailableHours(Long empleadoId, LocalDate fecha, Integer excludeId) {
         //comprobamos si el empleado está de baja en la fecha indicada
         if (absenceRepository.isEmployeeOnLeave(empleadoId, fecha)) {
             return Collections.emptyList();
@@ -203,10 +197,11 @@ public class AppointmentService {
         List<Appointment> citasDB = appointmentRepository.findByEmployeeIdAndDate(empleadoId, fecha);
 
 
-        // Si excludeId no es nulo, filtramos; si lo es, usamos la lista completa.
-        List<Appointment> citasParaValidar = (excludeId != null)
-                ? citasDB.stream().filter(a -> !a.getId().equals(excludeId)).collect(Collectors.toList())
-                : citasDB;
+        // FILTRO MAESTRO: Quitamos las canceladas y, si existe, la que queremos excluir
+        List<Appointment> citasParaValidar = citasDB.stream()
+                .filter(a -> a.getStatus() != AppoStatus.CANCELLED) // <--- Ignoramos canceladas
+                .filter(a -> excludeId == null || !a.getId().equals(Long.valueOf(excludeId))) // <--- Filtro de edición
+                .collect(Collectors.toList());
 
         // 4. Filtramos los tramos usando la lista que ya es segura para el lambda
         return todosLosTramos.stream()
@@ -264,6 +259,9 @@ public class AppointmentService {
         dto.setId(entity.getId());
         dto.setDate(entity.getDate());
         dto.setStartTime(entity.getStartTime());
+        dto.setEmployeeId(entity.getEmployee().getId());
+        dto.setServiceId(entity.getService().getId());
+        dto.setCustomerId(entity.getUser().getId());
 
         // Extraemos los nombres de las relaciones
         dto.setCustomerName(entity.getUser().getName());
@@ -284,10 +282,32 @@ public class AppointmentService {
         return appointmentRepository.countServicesPerDay(LocalDate.now());
     }
 
-    public void checkAbsence(int idEmpleado, LocalDate fecha) {
+    public void checkAbsence(Long idEmpleado, LocalDate fecha) {
         if (absenceRepository.isEmployeeOnLeave(idEmpleado, fecha)) {
             throw new DateNotValidException("El profesional no está disponible en la fecha seleccionada por motivos de baja o vacaciones.");
         }
+    }
+
+    public int cancelEmployeeAppointmentsByPeriod(Long employeeId, LocalDate start, LocalDate end) {
+        // Validación de seguridad: que la fecha de inicio no sea mayor que la de fin
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la de fin");
+        }
+
+        // Ejecutamos la cancelación masiva
+        int affectedRows = appointmentRepository.cancelAppointmentsInPeriod(employeeId, start, end);
+
+        return affectedRows;
+    }
+
+    public int countTotalAvailableSlots(LocalDate fecha) {
+        // 1. Obtenemos todos los empleados (barberos)
+        List<Employee> todosLosEmpleados = employeeRepository.findAll();
+
+        // 2. Sumamos el tamaño de la lista de horas disponibles de cada uno
+        return todosLosEmpleados.stream()
+                .mapToInt(emp -> getAvailableHours(emp.getId(), fecha, null).size())
+                .sum();
     }
 
 

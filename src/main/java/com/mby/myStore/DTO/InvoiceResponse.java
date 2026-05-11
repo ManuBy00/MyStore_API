@@ -1,9 +1,6 @@
 package com.mby.myStore.DTO;
 
-import com.mby.myStore.Model.Appointment;
-import com.mby.myStore.Model.Employee;
 import com.mby.myStore.Model.paymentMethod;
-import jakarta.persistence.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -16,7 +13,7 @@ public class InvoiceResponse {
 
     private String clientName;
 
-    private String employee;
+    private String employeeName;
 
     private LocalDate date;
 

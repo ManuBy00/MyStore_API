@@ -30,6 +30,9 @@ public class AbsencesService {
     private EmployeeRepository employeeRepository;
 
     @Autowired
+    private AppointmentService appointmentService;
+
+    @Autowired
     private AppointmentRepository appointmentRepository;
 
     public AbsenceResponse createAbsence(AbsenceRequest absenceRequest) {
@@ -44,15 +47,17 @@ public class AbsencesService {
 
         Absence absenceEntity =  new Absence();
         absenceEntity.setEmployee(employee);
-        absenceEntity.setStartDate(LocalDate.now());
-        absenceEntity.setEndDate(LocalDate.now());
+        absenceEntity.setStartDate(absenceRequest.getStartDate());
+        absenceEntity.setEndDate(absenceRequest.getEndDate());
         absenceEntity.setReason(absenceRequest.getReason());
+
+        appointmentService.cancelEmployeeAppointmentsByPeriod(employee.getId(), absenceEntity.getStartDate(), absenceEntity.getEndDate());
 
         absenceRepository.save(absenceEntity);
         return mapToResponse(absenceEntity);
     }
 
-    public AbsenceResponse updateAbsence(int id, AbsenceRequest absenceDetails) {
+    public AbsenceResponse updateAbsence(Long id, AbsenceRequest absenceDetails) {
         // 1. Verificar que la ausencia existe
         Absence existingAbsence = absenceRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException("Ausencia no encontrada con ID: " + id));
@@ -69,14 +74,14 @@ public class AbsencesService {
         return mapToResponse(existingAbsence);
     }
 
-    public void deleteAbsence(int id) {
+    public void deleteAbsence(Long id) {
         if (!absenceRepository.existsById(id)) {
             throw new RecordNotFoundException("No se puede borrar: Ausencia no encontrada");
         }
         absenceRepository.deleteById(id);
     }
 
-    public List<AbsenceResponse> getAbsencesByEmployee(int employeeId) {
+    public List<AbsenceResponse> getAbsencesByEmployee(Long employeeId) {
         if (employeeRepository.findById(employeeId).isEmpty()) {
             throw new RecordNotFoundException("Empleado no encontrado");
         }

@@ -40,7 +40,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "No se encontró el usuario con el ID proporcionado")})
     public ResponseEntity<UserResponse> getUserById(
             @Parameter(description = "ID del usuario a buscar", example = "1")
-            @PathVariable int id){
+            @PathVariable Long id){
             UserResponse usuario = userService.getUserById(id);
             return ResponseEntity.ok(usuario);
 
@@ -70,7 +70,7 @@ public class UserController {
     })
     public ResponseEntity<Void> deleteUser(
             @Parameter(description = "ID del usuario a eliminar", example = "5")
-            @PathVariable int id) {
+            @PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -86,7 +86,7 @@ public class UserController {
     })
     public ResponseEntity<UserResponse> updateUser(
             @Parameter(description = "ID del usuario a actualizar", example = "1")
-            @PathVariable int id,
+            @PathVariable Long id,
             @RequestBody User user){
         UserResponse clienteActualizado = userService.updateUser(user, id);
         return ResponseEntity.ok(clienteActualizado);

@@ -8,15 +8,15 @@ import org.springframework.data.jpa.repository.Query;
 import java.time.LocalDate;
 import java.util.List;
 
-public interface AbsenceRepository extends JpaRepository<Absence, Integer> {
+public interface AbsenceRepository extends JpaRepository<Absence, Long> {
 
-    List<Absence> getAbsenceByEmployeeId(int employeeId);
+    List<Absence> getAbsenceByEmployeeId(Long employeeId);
 
     @Query("SELECT COUNT(a) > 0 " +
             "FROM Absence a " +
             "WHERE a.employee.id = :employeeId " +
             "AND :date BETWEEN a.startDate AND a.endDate")
-    boolean isEmployeeOnLeave(int employeeId, LocalDate date);
+    boolean isEmployeeOnLeave(Long employeeId, LocalDate date);
 
 
 }

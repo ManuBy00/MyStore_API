@@ -12,7 +12,7 @@ public class UserResponse {
 
 
     @Schema(description = "Identificador único del usuario", example = "42")
-    private int id;
+    private Long id;
 
     @Schema(description = "Nombre completo del usuario", example = "Marina Berrio")
     private String name;

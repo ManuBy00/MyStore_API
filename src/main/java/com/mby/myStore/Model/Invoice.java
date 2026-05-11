@@ -28,12 +28,10 @@ public class Invoice {
     @JoinColumn(name = "appointment_id", nullable = false)
     private Appointment appointment;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "payment_method")
     private paymentMethod paymentMethod;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal total;
-
-    @Column(nullable = false)
-    private String status;
 }

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -26,18 +27,18 @@ public class Appointment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     @Schema(description = "Identificador único de la cita", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
-    private Integer id;
+    private Long id;
 
     @NotNull
     @Column(name = "date", nullable = false)
     @Schema(description = "Fecha programada para la cita", example = "2024-12-15", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDate date;
 
-    @Size(max = 20)
-    @ColumnDefault("'PENDIENTE'")
-    @Column(name = "status", length = 20)
+    @ColumnDefault("'CONFIRMED'")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     @Schema(description = "Estado actual de la cita", example = "PENDIENTE", allowableValues = {"PENDIENTE", "CONFIRMADA", "CANCELADA"})
-    private String status;
+    private AppoStatus status;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -58,7 +59,7 @@ public class Appointment {
     @Schema(description = "Servicio que se realizará durante la cita")
     private Service service;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @CreationTimestamp
     @Column(name = "created_at")
     @Schema(description = "Fecha y hora de creación del registro", example = "2024-05-20T10:00:00Z", accessMode = Schema.AccessMode.READ_ONLY)
     private Instant createdAt;

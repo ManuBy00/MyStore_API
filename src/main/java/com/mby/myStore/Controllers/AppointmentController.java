@@ -64,7 +64,9 @@ public class AppointmentController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<AppointmentResponse> updateAppointment(@PathVariable int id, @RequestBody AppointmentRequest cita) {
+    public ResponseEntity<AppointmentResponse> updateAppointment(@PathVariable Long id, @RequestBody AppointmentRequest cita) {
+        System.out.println("ID recibido por URL: " + id);
+        System.out.println("Datos del cuerpo: " + cita.toString());
             AppointmentResponse actualizada = appointmentService.updateAppointment(id, cita);
             return ResponseEntity.ok(actualizada);
     }
@@ -81,7 +83,7 @@ public class AppointmentController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @DeleteMapping("/{appointment}")
-    public ResponseEntity<Void> deleteAppointment(@PathVariable int appointment) {
+    public ResponseEntity<Void> deleteAppointment(@PathVariable Long appointment) {
         appointmentService.deleteAppointment(appointment);
         return ResponseEntity.noContent().build();
     }
@@ -99,7 +101,7 @@ public class AppointmentController {
     })
     @GetMapping("/availability")
     public ResponseEntity<List<LocalTime>> getAvailability(
-            @RequestParam int employeeId,
+            @RequestParam Long employeeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) Integer excludeId) {
 
@@ -140,13 +142,13 @@ public class AppointmentController {
     @GetMapping("/dashboardSummary")
     public ResponseEntity<DashboardResponse> getDailyServices() {
         List<ServiceCountDTO> serviceslist = appointmentService.getTodayServiceStats();
-        int activeEmployees = employeeService.getActiveEmployeesCount();
-        int productsNumber = 0;
+        Long activeEmployees = employeeService.getActiveEmployeesCount();
+        int slots = appointmentService.countTotalAvailableSlots(LocalDate.now());
 
         DashboardResponse dashboardDTO = new DashboardResponse();
         dashboardDTO.setServiceCountDTO(serviceslist);
         dashboardDTO.setEmployeesNumber(activeEmployees);
-        dashboardDTO.setProductsNumber(productsNumber);
+        dashboardDTO.setAvailableSlots(slots);
         return ResponseEntity.ok(dashboardDTO);
     }
 
@@ -164,4 +166,5 @@ public class AppointmentController {
     public ResponseEntity<List<Service>> getServices() {
         return ResponseEntity.ok(servicesService.getServicios());
     }
+
 }

@@ -54,7 +54,7 @@ public class AbsencesController {
             @ApiResponse(responseCode = "400", description = "Error en la validación de fechas")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<AbsenceResponse> update(@PathVariable int id, @Valid @RequestBody AbsenceRequest absence) {
+    public ResponseEntity<AbsenceResponse> update(@PathVariable Long id, @Valid @RequestBody AbsenceRequest absence) {
         AbsenceResponse updated = absencesService.updateAbsence(id, absence);
         return ResponseEntity.ok(updated); // Devuelve 200
     }
@@ -65,13 +65,13 @@ public class AbsencesController {
             @ApiResponse(responseCode = "404", description = "La ausencia no existe")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable int id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         absencesService.deleteAbsence(id);
         return ResponseEntity.noContent().build(); // Devuelve 204 (sin contenido, es lo estándar para delete)
     }
 
     @GetMapping("/employee/{id}")
-    public ResponseEntity<List<AbsenceResponse>> getAbsencesByEmployee(@PathVariable int id) {
+    public ResponseEntity<List<AbsenceResponse>> getAbsencesByEmployee(@PathVariable Long id) {
         return ResponseEntity.ok(absencesService.getAbsencesByEmployee(id));
     }
 

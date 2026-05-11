@@ -34,7 +34,7 @@ public class EmployeeService {
      * @return El empleado encontrado.
      * @throws RecordNotFoundException si el ID no existe en la BD.
      */
-    public Employee getEmployeeById(int id){
+    public Employee getEmployeeById(Long id){
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException("No existe el empleado con ID: " + id));
     }
@@ -51,7 +51,7 @@ public class EmployeeService {
      * Elimina a un empleado del sistema.
      * @param id ID del empleado a borrar.
      */
-    public void deleteEmployee(int id) {
+    public void deleteEmployee(Long id) {
         if (!employeeRepository.existsById(id)) {
             throw new RecordNotFoundException("No se puede eliminar: empleado no encontrado");
         }
@@ -64,7 +64,7 @@ public class EmployeeService {
      * @param nuevoEmployee Datos actualizados.
      */
     @Transactional
-    public Employee updateEmployee(int id, Employee nuevoEmployee) {
+    public Employee updateEmployee(Long id, Employee nuevoEmployee) {
         Employee employeeExistente = getEmployeeById(id);
 
         employeeExistente.setName(nuevoEmployee.getName());
@@ -74,7 +74,7 @@ public class EmployeeService {
         return employeeExistente;
     }
 
-    public int getActiveEmployeesCount() {
+    public Long getActiveEmployeesCount() {
         // Esto llama a employeeRepository.countByActiveTrue()
         return employeeRepository.countByActiveTrue();
     }

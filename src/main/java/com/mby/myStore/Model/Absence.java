@@ -19,7 +19,7 @@ public class Absence {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER) // Trae al empleado siempre que consultes la ausencia
     @JoinColumn(name = "employee_id", nullable = false) // Crea la FK "employee_id" y no permite nulos

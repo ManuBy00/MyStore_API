@@ -3,7 +3,9 @@ package com.mby.myStore.Repositories;
 import com.mby.myStore.DTO.ServiceCountDTO;
 import com.mby.myStore.Model.Appointment;
 import com.mby.myStore.Model.Employee;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,7 +15,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 @Repository
-public interface AppointmentRepository extends JpaRepository<Appointment,Integer> {
+public interface AppointmentRepository extends JpaRepository<Appointment,Long> {
 
     /**
      * Consulta personalizada para detectar solapamientos de horario (Conflictos).
@@ -24,6 +26,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment,Integer
     @Query("SELECT c " +
             "FROM Appointment c " +
             "WHERE c.date = :fecha " +
+            "AND c.status != 'CANCELLED' " +
             "AND c.employee = :emp " +
             "AND (:horaInicio < c.endTime AND :horaFin > c.startTime) ")
     List<Appointment> checkAvailability(@Param("emp") Employee emp,
@@ -41,7 +44,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment,Integer
      * Query Method que filtra por la relación con Empleado y una fecha.
      * Es la base para el algoritmo que calcula los huecos libres de un barbero.
      */
-    List<Appointment> findByEmployeeIdAndDate(int empleadoId, LocalDate fecha);
+    List<Appointment> findByEmployeeIdAndDate(Long empleadoId, LocalDate fecha);
 
     /**
      * Consulta compleja con JOIN manual.
@@ -59,4 +62,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment,Integer
             "WHERE a.date = :today " +
             "GROUP BY s.name")
     List<ServiceCountDTO> countServicesPerDay(@Param("today") LocalDate today);
+
+    @Modifying
+    @Transactional // Importante para asegurar que la operación se complete
+    @Query("UPDATE Appointment a SET a.status = 'CANCELLED' " +
+            "WHERE a.employee.id = :employeeId " +
+            "AND a.date BETWEEN :startDate AND :endDate " +
+            "AND a.status != 'CANCELLED'")
+    int cancelAppointmentsInPeriod(@Param("employeeId") Long employeeId,
+                                   @Param("startDate") LocalDate startDate,
+                                   @Param("endDate") LocalDate endDate);
 }

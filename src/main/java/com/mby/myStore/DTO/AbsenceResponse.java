@@ -8,8 +8,8 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class AbsenceResponse {
-    private Integer id;
-    private Integer employeeId;    // Solo el ID
+    private Long id;
+    private Long employeeId;    // Solo el ID
     private String employeeName; // Opcional, para el mensaje de éxito
     private LocalDate startDate;
     private LocalDate endDate;

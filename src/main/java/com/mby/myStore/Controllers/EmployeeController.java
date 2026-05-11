@@ -47,7 +47,7 @@ public class EmployeeController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Employee> getById(@PathVariable int id) {
+    public ResponseEntity<Employee> getById(@PathVariable Long id) {
         return ResponseEntity.ok(empleadoService.getEmployeeById(id));
     }
 
@@ -80,7 +80,7 @@ public class EmployeeController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> update(@PathVariable int id, @RequestBody Employee employee) {
+    public ResponseEntity<Employee> update(@PathVariable Long id, @RequestBody Employee employee) {
         Employee emp = empleadoService.updateEmployee(id, employee);
         return ResponseEntity.ok(emp);
     }
@@ -97,7 +97,7 @@ public class EmployeeController {
             @ApiResponse(responseCode = "403", description = "Usuario no autenticado")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable int id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         empleadoService.deleteEmployee(id);
         return ResponseEntity.noContent().build();
 

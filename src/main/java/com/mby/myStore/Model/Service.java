@@ -22,7 +22,7 @@ public class Service {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     @Schema(description = "Identificador único del servicio", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
-    private Integer id;
+    private Long id;
 
     @Size(max = 100)
     @NotNull
@@ -38,7 +38,7 @@ public class Service {
     @NotNull
     @Column(name = "duration_minutes", nullable = false)
     @Schema(description = "Duración estimada del servicio en minutos", example = "30", requiredMode = Schema.RequiredMode.REQUIRED)
-    private Integer durationMinutes;
+    private Long durationMinutes;
 
     @OneToMany
     @JoinColumn(name = "service_id")

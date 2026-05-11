@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -24,7 +25,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     @Schema(description = "ID único del usuario", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
-    private Integer id;
+    private Long id;
 
     @Size(max = 100)
     @NotNull
@@ -44,7 +45,7 @@ public class User {
     @Schema(description = "Contraseña encriptada del usuario", example = "********", requiredMode = Schema.RequiredMode.REQUIRED, format = "password")
     private String password;
 
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @CreationTimestamp
     @Column(name = "register_date")
     @Schema(description = "Fecha y hora en la que el usuario se registró", example = "2024-01-01T12:00:00Z", accessMode = Schema.AccessMode.READ_ONLY)
     private Instant registerDate;

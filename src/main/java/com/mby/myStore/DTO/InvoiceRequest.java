@@ -12,7 +12,6 @@ public class InvoiceRequest {
 
     // Estos datos los decide el usuario en el momento de cobrar
     private paymentMethod paymentMethod;
-    private String status;
 
     // El total podría venir calculado del front o recalcularse en el back
     private BigDecimal total;

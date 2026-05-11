@@ -7,11 +7,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface EmployeeRepository extends JpaRepository<Employee,Integer> {
+public interface EmployeeRepository extends JpaRepository<Employee,Long> {
 
-    public List<Employee> findAllByActiveTrue();
-    public List<Employee> findAllByActiveFalse();
-    public int countByActiveTrue();
+     List<Employee> findAllByActiveTrue();
+     List<Employee> findAllByActiveFalse();
+     Long countByActiveTrue();
 
 
 

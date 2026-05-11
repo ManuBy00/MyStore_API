@@ -25,7 +25,7 @@ public class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     @Schema(description = "Identificador único del empleado", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
-    private Integer id;
+    private Long id;
 
     @Size(max = 100)
     @NotNull
@@ -35,7 +35,7 @@ public class Employee {
 
 
     @Column(name = "hire_date")
-    @Schema(description = "Fecha de alta del empleado", example = "12/08/2025")
+    @Schema(description = "Fecha de alta del empleado", example = "2025-08-12")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate hireDate;
 

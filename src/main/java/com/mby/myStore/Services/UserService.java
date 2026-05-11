@@ -40,7 +40,7 @@ public class UserService {
      * @param id del cliente a buscar
      * @return el cliente con el id introducido
      */
-    public UserResponse getUserById(int id){
+    public UserResponse getUserById(Long id){
         return userRepository.findById(id)
                 .map(this::entityToDTO)
                 .orElseThrow(()->new RecordNotFoundException("No existe un cliente con el id " + id));
@@ -62,7 +62,7 @@ public class UserService {
      * @param userNuevo
      * @param id
      */
-    public UserResponse updateUser(User userNuevo, int id){
+    public UserResponse updateUser(User userNuevo, Long id){
         if (userNuevo != null && userRepository.existsById(id)){
             Optional<User> cliente = userRepository.findById(id);
             User newUser = cliente.get();
@@ -82,7 +82,7 @@ public class UserService {
      * elimina un  usuario por su id, comprobando primero si existe
      * @param id
      */
-    public void deleteUser(int id){
+    public void deleteUser(Long id){
         if (userRepository.existsById(id)){
             userRepository.deleteById(id);
         }else {

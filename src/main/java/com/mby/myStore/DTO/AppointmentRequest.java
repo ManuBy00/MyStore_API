@@ -1,6 +1,7 @@
 package com.mby.myStore.DTO;
 
 
+import com.mby.myStore.Model.AppoStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import java.time.LocalDate;
@@ -12,7 +13,7 @@ public class AppointmentRequest {
 
     //DTO que recibe la api para operaciones de creación o edición
 
-    private int id;
+    private Long id;
 
     @Schema(example = "2026-05-15")
     private LocalDate date;
@@ -24,11 +25,14 @@ public class AppointmentRequest {
     private String telNumber;
 
     @Schema(description = "ID del cliente", example = "1")
-    private int clientId;
+    private Long clientId;
 
     @Schema(description = "ID del barbero", example = "1")
-    private int employeeId;
+    private Long employeeId;
 
     @Schema(description = "ID del servicio", example = "2")
-    private int serviceId;
+    private Long serviceId;
+
+    @Schema(description = "estado de la cita", example = "CONFIRMED")
+    private AppoStatus status;
 }

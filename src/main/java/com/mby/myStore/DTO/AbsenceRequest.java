@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Setter
 public class AbsenceRequest {
 
-    private Integer employeeId;
+    private Long employeeId;
 
     private LocalDate startDate;
 

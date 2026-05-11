@@ -9,6 +9,6 @@ import java.util.List;
 @Setter
 public class DashboardResponse {
     List<ServiceCountDTO> serviceCountDTO;
-    int employeesNumber;
-    int productsNumber;
+    Long employeesNumber;
+    int availableSlots;
 }
