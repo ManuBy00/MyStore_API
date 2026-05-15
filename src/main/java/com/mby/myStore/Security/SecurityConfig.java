@@ -58,8 +58,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Permitimos el origen de tu aplicación Angular
-        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        // 1. Orígenes permitidos
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:4200",   // Angular
+                "http://10.0.2.2:8080" //  emulador android
+
+        ));
 
         // Permitimos los métodos HTTP estándar
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

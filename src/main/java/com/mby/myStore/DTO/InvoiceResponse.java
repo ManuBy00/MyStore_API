@@ -19,5 +19,8 @@ public class InvoiceResponse {
 
     private paymentMethod paymentMethod;
 
-    private BigDecimal total;
+    private BigDecimal price;
+
+    private String serviceName;
+
 }

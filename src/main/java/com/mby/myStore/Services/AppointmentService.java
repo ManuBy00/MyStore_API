@@ -16,6 +16,7 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +39,9 @@ public class AppointmentService {
 
     @Autowired
     private AbsenceRepository absenceRepository;
+
+    @Autowired
+    private BusinessShiftRepository businessShiftRepository;
 
     /**
      * Registra una nueva cita calculando automáticamente la duración y validando disponibilidad. Si es fin de semana
@@ -179,25 +183,29 @@ public class AppointmentService {
      * Genera tramos horarios y los filtra comparándolos con las citas reales del día.
      */
     public List<LocalTime> getAvailableHours(Long empleadoId, LocalDate fecha, Integer excludeId) {
-        //comprobamos si el empleado está de baja en la fecha indicada
+        //validar si el empleado está de baja
         if (absenceRepository.isEmployeeOnLeave(empleadoId, fecha)) {
             return Collections.emptyList();
         }
 
-        // 1. Definimos los tramos horarios
-        List<LocalTime> todosLosTramos = List.of(
-                LocalTime.of(16, 0), LocalTime.of(16, 30),
-                LocalTime.of(17, 0), LocalTime.of(17, 30),
-                LocalTime.of(18, 0), LocalTime.of(18, 30),
-                LocalTime.of(19, 0), LocalTime.of(19, 30),
-                LocalTime.of(20, 0), LocalTime.of(20, 30)
-        );
+        if (fecha.isBefore(LocalDate.now())) {
+            return Collections.emptyList();
+        }
+
+        // obtenemos los turnos para ese día de lasemana
+        List<BusinessShift> turnos = businessShiftRepository.findByDayOfWeekOrderByStartTimeAsc(fecha.getDayOfWeek());
+
+        // Generar la lista de tramos uniendo todos los turnos
+        List<LocalTime> todosLosTramos = new ArrayList<>();
+        for (BusinessShift turno : turnos) {
+            todosLosTramos.addAll(generateSlotsForInterval(turno.getStartTime(), turno.getEndTime()));
+        }
 
         // 2. Traemos todas las citas de la base de datos
         List<Appointment> citasDB = appointmentRepository.findByEmployeeIdAndDate(empleadoId, fecha);
 
 
-        // FILTRO MAESTRO: Quitamos las canceladas y, si existe, la que queremos excluir
+        // FILTRO : Quitamos las canceladas y, si existe, la que queremos excluir
         List<Appointment> citasParaValidar = citasDB.stream()
                 .filter(a -> a.getStatus() != AppoStatus.CANCELLED) // <--- Ignoramos canceladas
                 .filter(a -> excludeId == null || !a.getId().equals(Long.valueOf(excludeId))) // <--- Filtro de edición
@@ -231,6 +239,20 @@ public class AppointmentService {
     public List<AppointmentResponse> buscarCitasPorNombreCliente(String nombre) {
         // Llamamos al método con la @Query personalizada que creamos en el Repository
         return appointmentRepository.findByUserName(nombre).stream().map(this::mapToViewDTO).toList();
+    }
+
+    public List<AppointmentResponse> getAppoByUserId(Long userId) {
+        return appointmentRepository.findByUserId(userId).stream().map(this::mapToViewDTO).toList();
+    }
+
+    public void cancelAppointment(Long id) {
+        Appointment appointment = appointmentRepository.getById(id);
+        if (appointment != null && appointment.getStatus() == AppoStatus.CONFIRMED) {
+            appointment.setStatus(AppoStatus.CANCELLED);
+            appointmentRepository.save(appointment);
+        }else{
+            throw new DateNotValidException("No se pueden cancelar la cita");
+        }
     }
 
     /**
@@ -308,6 +330,25 @@ public class AppointmentService {
         return todosLosEmpleados.stream()
                 .mapToInt(emp -> getAvailableHours(emp.getId(), fecha, null).size())
                 .sum();
+    }
+
+    private List<LocalTime> generateSlotsForInterval(LocalTime start, LocalTime end) {
+        List<LocalTime> slots = new ArrayList<>();
+        LocalTime current = start;
+
+        while (current.isBefore(end)) {
+            slots.add(current);
+            current = current.plusMinutes(30);
+        }
+        return slots;
+    }
+
+    private BusinessShift saveShift(BusinessShift businessShift){
+        return businessShiftRepository.save(businessShift);
+    }
+
+    private void deleteShiftByDay(DayOfWeek day) {
+        businessShiftRepository.deleteByDayOfWeek(day);
     }
 
 

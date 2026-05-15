@@ -63,6 +63,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment,Long> {
             "GROUP BY s.name")
     List<ServiceCountDTO> countServicesPerDay(@Param("today") LocalDate today);
 
+    List<Appointment> findByUserId(Long id);
+
     @Modifying
     @Transactional // Importante para asegurar que la operación se complete
     @Query("UPDATE Appointment a SET a.status = 'CANCELLED' " +

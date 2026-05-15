@@ -46,8 +46,13 @@ public class InvoicesService {
         invoiceEntity.setAppointment(appointment);
         invoiceEntity.setDate(appointment.getDate());
         invoiceEntity.setPaymentMethod(invoice.getPaymentMethod());
-        invoiceEntity.setTotal(BigDecimal.valueOf(appointment.getService().getPrice()));
         invoiceEntity.setInvoiceNumber("INV-" + System.currentTimeMillis());
+        //snapshots
+        invoiceEntity.setClientName(appointment.getUser().getName());
+        invoiceEntity.setEmployeeName(appointment.getUser().getName());
+        invoiceEntity.setServiceName(appointment.getService().getName());
+        invoiceEntity.setPrice(BigDecimal.valueOf(appointment.getService().getPrice()));
+
         Invoice saved = invoiceRepository.save(invoiceEntity);
 
         return toResponse(saved);
@@ -82,7 +87,7 @@ public class InvoicesService {
         // 2. Actualizar solo los campos permitidos
         // No solemos dejar cambiar el 'appointment' ni el 'invoiceNumber' una vez creada
         invoice.setPaymentMethod(request.getPaymentMethod());
-        invoice.setTotal(request.getTotal());
+        invoice.setPrice(request.getTotal());
 
         // 3. Guardar y devolver
         Invoice updated = invoiceRepository.save(invoice);
@@ -96,7 +101,7 @@ public class InvoicesService {
     public BigDecimal incomesPerDay(LocalDate date) {
         List<Invoice> incomes = invoiceRepository.findByDate(date);
 
-        BigDecimal total = incomes.stream().map(Invoice::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal total = incomes.stream().map(Invoice::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
         return total;
     }
 
@@ -104,7 +109,13 @@ public class InvoicesService {
         return invoiceRepository.countByDate(date);
     }
 
-
+    public Invoice findByAppointmentId(Long appointmentId) {
+        if (appointmentRepository.findById(appointmentId).isPresent()) {
+            return invoiceRepository.findByAppointmentId(appointmentId).get();
+        }else{
+            throw new RecordNotFoundException("No existe factura para la cita con id " + appointmentId);
+        }
+    }
 
 
 
@@ -113,14 +124,12 @@ public class InvoicesService {
         dto.setId(entity.getId());
         dto.setInvoiceNumber(entity.getInvoiceNumber());
         dto.setDate(entity.getDate());
-        dto.setTotal(entity.getTotal());
+        dto.setPrice(entity.getPrice());
         dto.setPaymentMethod(entity.getPaymentMethod());
+        dto.setServiceName(entity.getServiceName());
+        dto.setClientName(entity.getClientName());
+        dto.setEmployeeName(entity.getEmployeeName());
 
-        // Navegamos por la relación que tú definiste
-        if (entity.getAppointment() != null) {
-            dto.setClientName(entity.getAppointment().getUser().getName());
-            dto.setEmployeeName(entity.getAppointment().getEmployee().getName());
-        }
         return dto;
     }
 }

@@ -65,10 +65,15 @@ public class AppointmentController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<AppointmentResponse> updateAppointment(@PathVariable Long id, @RequestBody AppointmentRequest cita) {
-        System.out.println("ID recibido por URL: " + id);
-        System.out.println("Datos del cuerpo: " + cita.toString());
+
             AppointmentResponse actualizada = appointmentService.updateAppointment(id, cita);
             return ResponseEntity.ok(actualizada);
+    }
+
+    @PutMapping("cancel/{id}")
+    public ResponseEntity<AppointmentResponse> cancelAppointment(@PathVariable Long id) {
+        appointmentService.cancelAppointment(id);
+        return ResponseEntity.ok().build();
     }
     
 
@@ -154,7 +159,7 @@ public class AppointmentController {
 
 
     /**
-     * Regoce todos los servicios
+     * Recoge todos los servicios
      * @return
      */
     @GetMapping("/services")
@@ -166,5 +171,20 @@ public class AppointmentController {
     public ResponseEntity<List<Service>> getServices() {
         return ResponseEntity.ok(servicesService.getServicios());
     }
+
+    /**
+     * Recoge las citas de un usuario específico
+     * @return
+     */
+    @GetMapping("/user/{id}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista de citas recuperada con éxito"),
+            @ApiResponse(responseCode = "403", description = "No autorizado"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
+    public ResponseEntity<List<AppointmentResponse>> getUserAppointments(@PathVariable Long id) {
+        return ResponseEntity.ok(appointmentService.getAppoByUserId(id));
+    }
+
 
 }

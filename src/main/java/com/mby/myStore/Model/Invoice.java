@@ -23,7 +23,6 @@ public class Invoice {
     @Column(nullable = false)
     private LocalDate date;
 
-
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "appointment_id", nullable = false)
     private Appointment appointment;
@@ -32,6 +31,14 @@ public class Invoice {
     @Column(name = "payment_method")
     private paymentMethod paymentMethod;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal total;
+    // DATOS SNAPSHOT (Estos se llenan al crear la factura y NO cambian nunca)
+    @Column(name = "client_name_snapshot", nullable = false, length = 150)
+    private String clientName;
+    @Column(name = "employee_name_snapshot", nullable = false, length = 150)
+    private String employeeName;   // Por si el empleado se va de la empresa
+    @Column(name = "service_name_snapshot", nullable = false, length = 150)
+    private String serviceName;    // Por si el servicio cambia de "Corte" a "Corte Premium"
+    @Column(name = "price_snapshot", nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;      // El precio que pagó ESE día
+
 }

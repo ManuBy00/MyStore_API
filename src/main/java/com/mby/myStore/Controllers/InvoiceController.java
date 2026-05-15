@@ -80,4 +80,29 @@ public class InvoiceController {
         billCardsData.setIncomesPerDay(incomes);
         return ResponseEntity.ok(billCardsData);
     }
+
+    @GetMapping("/report/monthly")
+    public ResponseEntity<byte[]> getMonthlyReport(
+            @RequestParam int month,
+            @RequestParam int year) {
+
+        byte[] pdfContent = pdfService.generateMonthlyReport(month, year);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        // attachment para que se descargue, inline para que se abra en el navegador
+        headers.setContentDispositionFormData("filename", "informe-" + month + "-" + year + ".pdf");
+
+        return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/from-appointment/{id}/export-pdf")
+    public ResponseEntity<byte[]> getInvoiceFromAppointment(@PathVariable Long id) {
+        Invoice invoice = invoiceService.findByAppointmentId(id);
+        byte[] pdfContent = pdfService.generateInvoicePdf(invoice);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("filename", "informe-" + id + ".pdf");
+        return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+    }
 }
